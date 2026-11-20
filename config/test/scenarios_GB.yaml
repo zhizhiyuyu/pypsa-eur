@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+cf40:
+  renewable:
+    tidalRange:
+      cutout: default
+      resource:
+        method: tidalplant
+      correction_factor: 2.5
+
+cf30:
+  renewable:
+    tidalRange:
+      cutout: default
+      resource:
+        method: tidalplant
+      correction_factor: 1.875
+
+cf20:
+  renewable:
+    tidalRange:
+      cutout: default
+      resource:
+        method: tidalplant
+      correction_factor: 1.25
+
+costlowest:
+  costs:
+    source: primary
+    version: v0.1.4
+
+cost80:
+  costs:
+    source: primary
+    version: v0.1.5
+
+cost70:
+  costs:
+    source: primary
+    version: v0.1.6
+
+co2budgetEE:
+  electricity:
+    co2limit_enable: true
+    co2limit: 1190
+
+co2budget80:
+  electricity:
+    co2limit_enable: true
+    co2limit: 1.19e6
+
+co2budget70:
+  electricity:
+    co2limit_enable: true
+    co2limit: 1.19e6
+
+
+

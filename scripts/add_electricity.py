@@ -499,7 +499,7 @@ def attach_wind_and_solar(
         landfall_lengths = {}
 
     for car in carriers:
-        if car == "hydro":
+        if car == "hydro" or car=="tidalRange":
             continue
 
         landfall_length = landfall_lengths.get(car, 0.0)
@@ -570,7 +570,87 @@ def attach_wind_and_solar(
                 lifetime=costs.at[supcar, "lifetime"],
             )
 
+def attach_tidal(
+    n: pypsa.Network,
+    costs: pd.DataFrame,
+    profile_filenames: dict,
+    extendable_carriers: list | set,
+    line_length_factor: float = 1.0,
+    landfall_lengths: dict = None,
+) -> None:
+    """
+    Attach tidal range generators to the network.
 
+    Parameters
+    ----------
+    n : pypsa.Network
+        The PyPSA network to attach the generators to.
+    costs : pd.DataFrame
+        DataFrame containing the cost data.
+    profile_filenames : dict
+        Dictionary containing the paths to the tidal range profiles.
+    extendable_carriers : list | set
+        List or set of energy carriers whose generator capacity can be extended.
+    line_length_factor : float, optional
+        Factor to scale the line length, by default 1.0.
+    landfall_lengths : dict, optional
+        Dictionary containing the landfall lengths for tidal range, by default None.
+    """
+    if landfall_lengths is None:
+        landfall_lengths = {}
+
+    car = "tidalRange"
+    add_missing_carriers(n, [car])
+
+    landfall_length = landfall_lengths.get(car, 0.0)
+
+    with xr.open_dataset(profile_filenames["profile_" + car]) as ds:
+        if ds.indexes["bus"].empty:
+            return
+
+        distance = ds["average_distance"].to_pandas()
+        distance.index = distance.index
+        submarine_cost = costs.at[car + "-connection-submarine", "capital_cost"]
+        underground_cost = costs.at[
+            car + "-connection-underground", "capital_cost"
+        ]
+        connection_cost = line_length_factor * (
+            distance * submarine_cost + landfall_length * underground_cost
+        )
+
+        capital_cost = (
+            costs.at[car, "capital_cost"]
+            + costs.at[car + "-station", "capital_cost"]
+            + connection_cost
+        )
+
+        logger.info(
+            f"Added connection cost of {connection_cost.min():0.0f}-{connection_cost.max():0.0f} Eur/MW/a to {car}"
+        )
+
+        buses = ds.indexes["bus"].get_level_values("bus")
+        bus = ds.indexes["bus"]
+        p_nom_max = ds["p_nom_max"].to_pandas()
+        p_nom_max.index = p_nom_max.index
+
+        p_max_pu = ds["profile"].to_pandas()
+        p_max_pu.columns = p_max_pu.columns
+        
+        extendable = "tidalRange" in extendable_carriers["Generator"]
+        n.add(
+            "Generator",
+            bus,
+            suffix=" " + car,
+            bus=buses,
+            carrier=car,
+            p_nom_extendable=extendable,
+            p_nom_max=p_nom_max,
+            marginal_cost=costs.at[car, "marginal_cost"],
+            capital_cost=capital_cost,
+            efficiency=costs.at[car, "efficiency"],
+            p_max_pu=p_max_pu,
+            lifetime=costs.at[car, "lifetime"],
+        )
 def attach_conventional_generators(
     n: pypsa.Network,
     costs: pd.DataFrame,
@@ -1279,6 +1359,16 @@ if __name__ == "__main__":
         landfall_lengths,
     )
 
+    if "tidalRange" in renewable_carriers:
+        attach_tidal(
+            n,
+            costs,
+            snakemake.input,
+            extendable_carriers,
+            params.line_length_factor,
+            landfall_lengths,
+        )   
+
     if "hydro" in renewable_carriers:
         p = params.renewable["hydro"]
         carriers = p.pop("carriers", [])
@@ -1291,6 +1381,7 @@ if __name__ == "__main__":
             carriers,
             **p,
         )
+        
 
     estimate_renewable_caps = params.electricity["estimate_renewable_capacities"]
     if estimate_renewable_caps["enable"]:

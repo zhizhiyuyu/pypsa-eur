@@ -412,6 +412,23 @@ if (CUTOUT_DATASET := dataset_version("cutout"))["source"] in [
         run:
             copy2(input[0], output[0])
 
+if (CUTOUT_DATASET := dataset_version("cutout"))["source"] in [
+    "local",
+]:
+    rule retrieve_cutout:
+        input:
+            "/Users/zhiyu/Desktop/pypsa-eur/cutouts"+"/{cutout}.nc",
+        output:
+            CUTOUT_DATASET["folder"] + "/{cutout}.nc",
+        log:
+            "logs/retrieve_cutout/{cutout}.log",
+        retries: 2
+        resources:
+            mem_mb=5000,
+        message:
+            "Retrieving cutout data for {wildcards.cutout}"
+        run:
+            copy2(input[0], output[0])
 
 if (COUNTRY_RUNOFF_DATASET := dataset_version("country_runoff"))["source"] in [
     "archive"

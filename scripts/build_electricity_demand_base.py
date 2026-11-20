@@ -93,6 +93,13 @@ def energy_atlas_distribution_keys(
         )
         group["weights"] = [w["sum"] for w in weights]
         distribution_keys.append(group["weights"] / group["weights"].sum())
+    if not distribution_keys:
+        return pd.Series(
+            np.nan,
+            index=regions.index,
+            dtype=float,
+        )
+ 
     distribution_keys = pd.concat(distribution_keys).reindex(regions.index)
     return distribution_keys
 

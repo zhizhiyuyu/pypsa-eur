@@ -1,0 +1,124 @@
+# yaml-language-server: $schema=../schema.default.json
+# SPDX-FileCopyrightText: Contributors to PyPSA-Eur <https://github.com/pypsa/pypsa-eur>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+tutorial: true
+
+run:
+  name:
+  - costlowest
+  scenarios:
+    enable: true
+    file: "config/test/scenarios_GB.yaml"
+  disable_progressbar: true
+  shared_resources:
+    policy: false
+    exclude: []
+scenario:
+  clusters:
+  - 9
+  opts:
+  - ''
+
+countries: ['GB']
+
+snapshots:
+  start: "2019-01-01"
+  end: "2020-01-01"
+
+atlite:
+  default_cutout: gb-2019-all
+  cutouts:
+    gb-2019-all:
+      module: [tide, era5]
+      time: ["2019", "2019"]
+      fes_path: "/Users/zz5322/Desktop/uptide/ocean_tide_extrapolated"
+
+electricity:
+  voltages:
+  - 220.0
+  - 300.0
+  - 330.0
+  - 380.0
+  - 400.0
+  - 500.0
+  - 750.0
+  base_network: osm
+  gaslimit_enable: false
+  gaslimit: false
+  co2limit_enable: false
+  co2limit: 3000000.0
+
+  operational_reserve:
+    activate: false
+    epsilon_load: 0.02
+    epsilon_vres: 0.02
+    contingency: 4000
+  max_hours:
+    battery: 6
+    "li-ion": 6
+    lfp: 6
+    vanadium: 10
+    lair: 12
+    pair: 24
+    "iron-air": 100
+    H2: 168
+  extendable_carriers:
+    Generator:
+    - solar
+    - tidalRange
+    - onwind
+    - "offwind-ac"
+    - "offwind-dc"
+    - CCGT
+    StorageUnit: []
+    Store:
+    - battery
+    - H2
+    Link: []
+  powerplants_filter: "(DateOut > 2025 or DateOut != DateOut) and (DateIn < 2026 or DateIn != DateIn)"
+  custom_powerplants: false
+  everywhere_powerplants: []
+  conventional_carriers:
+  - nuclear
+  - CCGT
+  - coal
+  - waste
+
+  renewable_carriers:
+  - tidalRange
+  - solar
+  - "solar-hsat"
+  - onwind
+  - "offwind-ac"
+  - "offwind-dc"
+  - "offwind-float"
+  - hydro
+
+renewable:
+  tidalRange:
+    cutout: default
+    resource:
+      method: tidalplant
+    correction_factor: 1.25
+    corine:
+      - 44
+      - 255
+    natura: true
+    ship_threshold: 400
+    max_depth: 30
+    clip_p_max_pu: 0.01
+    pe_min: 50
+    landfall_length: 20
+
+data:
+  cutout:
+    source: local
+    
+  costs:
+    source: primary
+    version: v0.1.4
+
+load:
+  scaling_factor: 1.2

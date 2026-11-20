@@ -378,7 +378,7 @@ rule build_renewable_profiles:
     benchmark:
         benchmarks("build_renewable_profile_{clusters}_{technology}")
     wildcard_constraints:
-        technology="(?!hydro).*",  # Any technology other than hydro
+        technology="(?!hydro|tidalRange).*",  # Any technology other than hydro
     threads: config["atlite"].get("nprocesses", 4)
     resources:
         mem_mb=config["atlite"].get("nprocesses", 4) * 5000,
@@ -452,6 +452,33 @@ if COUNTRY_RUNOFF_DATASET["source"] == "build":
             scripts("build_country_runoff.py")
 
 
+rule build_tidalRange_profile:
+    input:
+        availability_matrix=resources("availability_matrix_{clusters}_tidalRange.nc"),
+        offshore_shapes=resources("offshore_shapes.geojson"),
+        distance_regions=resources("regions_onshore_base_s_{clusters}.geojson"),
+        resource_regions=resources("regions_offshore_base_s_{clusters}.geojson"),
+        cutout=lambda w: input_cutout(
+            w, config_provider("renewable", "tidalRange", "cutout")(w)
+        ),
+    output:
+        profile=resources("profile_{clusters}_tidalRange.nc"),
+    log:
+        logs("build_tidalRange_profile_{clusters}_tidalRange.log"),
+    benchmark:
+        benchmarks("build_tidalRange_profile_{clusters}_tidalRange")
+    threads: config["atlite"].get("nprocesses", 4)
+    resources:
+        mem_mb=config["atlite"].get("nprocesses", 4) * 5000,
+    params:
+        snapshots=config_provider("snapshots"),
+        drop_leap_day=config_provider("enable", "drop_leap_day"),
+        renewable=config_provider("renewable"),
+    message:
+        "Building tidal range profiles for {wildcards.clusters} clusters"
+    script:
+        scripts("build_tidalRange_profiles.py")
+        
 rule build_hydro_profile:
     input:
         country_shapes=resources("country_shapes.geojson"),
@@ -583,7 +610,7 @@ def input_class_regions(w):
             f"regions_by_class_{{clusters}}_{tech}.geojson"
         )
         for tech in set(config_provider("electricity", "renewable_carriers")(w))
-        - {"hydro"}
+        - {"hydro","tidalRange"}
     }
 
 

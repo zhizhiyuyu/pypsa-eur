@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field, FilePath, field_validator
 
 from scripts.lib.validation.config._base import ConfigModel
 
-VALID_SOURCES = ["primary", "archive", "build"]  # Order defines sort priority
+VALID_SOURCES = ["primary", "archive", "build", "local"]  # Order defines sort priority
 
 VALID_TAGS = {
     "latest",
@@ -118,7 +118,7 @@ VersionsSchema = DataFrameSchema(
 class _DataSourceConfig(ConfigModel):
     """Configuration for a single data source."""
 
-    source: Literal["archive", "primary", "build"] = Field(
+    source: Literal["archive", "primary", "build", "local"] = Field(
         "archive",
         description="Source of the data. 'archive' retrieves pre-built data, 'primary' retrieves from primary source.",
     )
